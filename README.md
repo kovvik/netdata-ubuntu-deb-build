@@ -1,6 +1,6 @@
 # netdata-ubuntu-deb-build
 
-Tool to build ubuntu packages for Netdata using Vagrant
+Tool to build ubuntu packages for Netdata using Vagrant and ansible playbook.
 
 ## Requirements
 * Vagrant installed
