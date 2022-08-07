@@ -14,6 +14,7 @@ mkdir netdata_package
 vagrant up --provision
 ```
 After deb package build it will install the Netdata package to the VM and can be accessed on port 19999: http://localhost:19999
+
 Built packages will be copied to `netdata_package` dir.
 
 ## Ubuntu and Netdata versions
