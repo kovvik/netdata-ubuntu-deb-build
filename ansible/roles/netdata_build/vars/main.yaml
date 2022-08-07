@@ -1,0 +1,6 @@
+---
+
+build_root: /usr/local/src
+build_dir: netdata
+dest_dir: netdata_package
+netdata_version: "{{ lookup('env', 'NETDATA_VERSION') | default('1.34.0', True) }}"

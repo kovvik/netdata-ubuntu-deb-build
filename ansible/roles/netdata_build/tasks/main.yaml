@@ -1,0 +1,96 @@
+---
+
+- name: Install build dependencies
+  apt:
+    name:
+    - uuid-dev
+    - libuv1-dev
+    - zlib1g-dev
+    - build-essential
+    - autoconf
+    - automake
+    - git
+    - libssl-dev
+    - liblz4-dev
+    - pkg-config
+    - debhelper
+    - dh-autoreconf
+    - libelf-dev
+    - libjudy-dev
+    - libmnl-dev
+    - libjson-c-dev
+    - libcups2-dev
+    - libipmimonitoring-dev
+    - libnetfilter-acct-dev
+    - libsnappy-dev
+    - libprotobuf-dev
+    - libprotoc-dev
+    - cmake
+    - autogen
+    - protobuf-compiler
+    state: present
+    update_cache: yes
+
+- name: Checkout netdata
+  git:
+    repo: "https://github.com/netdata/netdata.git"
+    #track_submodules: yes
+    dest: "{{ build_root }}/{{ build_dir }}"
+    recursive: yes
+    update: yes
+    force: yes
+    version: "v{{ netdata_version }}"
+
+- name: Get commit message
+  shell: "git log --pretty=\"%s\" -n1"
+  args:
+    chdir: "{{ build_root }}/{{ build_dir }}"
+  register: commit_message
+
+- name: Get commit date
+  shell: "git log --pretty=\"%ad\" -n1"
+  args:
+    chdir: "{{ build_root }}/{{ build_dir }}"
+  register: commit_date
+
+- name: Create debian symlink
+  file:
+    src: "{{ build_root }}/{{ build_dir }}/contrib/debian"
+    dest: "{{ build_root }}/{{ build_dir }}/debian"
+    state: link
+
+- name: Create changelog file
+  template:
+    src: changelog.j2
+    dest: "{{ build_root }}/{{ build_dir }}/debian/changelog"
+
+- name: Create dest dir
+  file:
+    path: "{{ build_root }}/{{ dest_dir }}/{{ ansible_distribution_version }}/v{{ netdata_version }}"
+    state: directory
+
+- name: Build nedata deb package
+  shell: "dpkg-buildpackage -us -uc -rfakeroot"
+  args:
+    chdir: "{{ build_root}}/{{ build_dir }}"
+    creates: "{{ build_root }}/netdata_{{ netdata_version }}.tar.xz"
+
+- name: Find package files
+  find:
+    paths: "{{ build_root }}"
+    recurse: no
+    file_type: file
+  register: package_files
+
+- name: Copy package files
+  copy:
+    src: "{{ item }}"
+    dest: "{{ build_root}}/{{ dest_dir }}/{{ ansible_distribution_version }}/v{{ netdata_version }}/"
+    remote_src: yes
+    force: yes
+  loop: "{{ package_files.files | map(attribute='path') | list }}"
+
+- name: Install netdata
+  apt:
+    deb: "{{ build_root }}/netdata_{{ netdata_version }}_amd64.deb"
+    state: present
